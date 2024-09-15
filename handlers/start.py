@@ -13,3 +13,12 @@ async def cmd_start(message: Message):
         parse_mode='html',
         reply_markup=start.comm.as_markup()
     )
+
+@router.callback_query(F.data == 'main_menu')
+async def cmd_start(callback: CallbackQuery):
+    await callback.message.delete()
+    await callback.message.answer(
+        f"<b>Здравствуйте!</b>\nИмя: {callback.from_user.first_name}\nБаланс: 100\nКоличество решеных задач: 100",
+        parse_mode='html',
+        reply_markup=start.comm.as_markup()
+    )
