@@ -22,14 +22,8 @@ def create_tariff(name: str, price: float, is_active: bool = True, db: Session =
 
 @app.put("/tariffs/{tariff_id}")
 def update_tariff(tariff_id: int, name: str = None, price: float = None, is_active: bool = None, db: Session = Depends(get_db)):
-    tariff = crud.update_tariff(db, tariff_id, name, price, is_active)
-    if tariff is None:
-        raise HTTPException(status_code=404, detail="Tariff not found")
-    return tariff
+    return crud.update_tariff(db, tariff_id, name, price, is_active)
 
 @app.delete("/tariffs/{tariff_id}")
-def delete_tariff(tariff_id: int, db: Session = Depends(get_db)): 
-    tariff = crud.delete_tariff(db, tariff_id)
-    if tariff is None:
-        raise HTTPException(status_code=404, detail="Tariff not found")
-    return {"detail": "Tariff deleted"}
+def delete_tariff(tariff_id: int, db: Session = Depends(get_db)):
+    return crud.delete_tariff(db, tariff_id)

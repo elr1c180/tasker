@@ -1,37 +1,29 @@
-from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from db import models, crud, core
-from db.core import get_db
-from typing import AsyncGenerator
+from . import models
 
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    try:
-        models.Base.metadata.create_all(bind=core.engine)
-    except Exception as e:
-        print(f"Error during startup: {e}")
-    yield
-    # Выполнение при завершении
+def get_tariffs(db: Session):
+    return db.query(models.Tariff).all()
 
-app = FastAPI(lifespan=lifespan)
+def create_tariff(db: Session, name: str, price: float, is_active: bool):
+    new_tariff = models.Tariff(name=name, price=price, is_active=is_active)
+    db.add(new_tariff)
+    db.commit()
+    db.refresh(new_tariff)
+    return new_tariff
 
-@app.get("/tariffs/")
-def read_tariffs(db: Session = Depends(get_db)):
-    return crud.get_tariffs(db)
-
-@app.post("/tariffs/")
-def create_tariff(name: str, price: float, is_active: bool = True, db: Session = Depends(get_db)):
-    return crud.create_tariff(db, name, price, is_active)
-
-@app.put("/tariffs/{tariff_id}")
-def update_tariff(tariff_id: int, name: str = None, price: float = None, is_active: bool = None, db: Session = Depends(get_db)):
-    tariff = crud.update_tariff(db, tariff_id, name, price, is_active)
-    if tariff is None:
-        raise HTTPException(status_code=404, detail="Tariff not found")
+def update_tariff(db: Session, tariff_id: int, name: str = None, price: float = None, is_active: bool = None):
+    tariff = db.query(models.Tariff).filter(models.Tariff.id == tariff_id).first()
+    if name:
+        tariff.name = name
+    if price:
+        tariff.price = price
+    if is_active is not None:
+        tariff.is_active = is_active
+    db.commit()
+    db.refresh(tariff)
     return tariff
 
-@app.delete("/tariffs/{tariff_id}")
-def delete_tariff(tariff_id: int, db: Session = Depends(get_db)):
-    tariff = crud.delete_tariff(db, tariff_id)
-    if tariff is None:
-        raise HTTPException(status_code=404, detail="Tariff not found")
-    return {"detail": "Tariff deleted"}
+def delete_tariff(db: Session, tariff_id: int):
+    tariff = db.query(models.Tariff).filter(models.Tariff.id == tariff_id).first()
+    db.delete(tariff)
+    db.commit()
